@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: attendancems
+      POSTGRES_USER: attendancems
+      POSTGRES_PASSWORD: attendancems
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U attendancems -d attendancems"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg2://attendancems:attendancems@db:5432/attendancems
+      JWT_SECRET_KEY: dev-secret-change-me
+      JWT_ACCESS_TOKEN_EXPIRES_MINUTES: "1440"
+      SEED_DEMO_DATA: "true"
+      APP_ENV: local
+    ports:
+      - "8000:80"
+    depends_on:
+      db:
+        condition: service_healthy

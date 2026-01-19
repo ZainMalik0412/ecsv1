@@ -1,0 +1,18 @@
+aws_region   = "eu-west-2"
+environment  = "prod"
+app_name     = "attendancems"
+domain_name  = "zainecs.com"
+subdomain    = "tm"
+
+container_cpu    = 512
+container_memory = 1024
+desired_count    = 2
+
+db_instance_class    = "db.t3.micro"
+db_allocated_storage = 20
+db_name              = "attendancems"
+db_username          = "attendancems"
+
+# GitHub OIDC Configuration
+github_org  = "zainmalik"
+github_repo = "ecsv1"
