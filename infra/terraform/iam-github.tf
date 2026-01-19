@@ -58,7 +58,8 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload",
           "ecr:DescribeRepositories",
-          "ecr:ListImages"
+          "ecr:ListImages",
+          "ecr:ListTagsForResource"
         ]
         Resource = aws_ecr_repository.app.arn
       }
@@ -139,8 +140,10 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "ec2:Describe*",
           "elasticloadbalancing:Describe*",
           "rds:Describe*",
+          "rds:ListTagsForResource",
           "secretsmanager:Describe*",
           "secretsmanager:GetSecretValue",
+          "secretsmanager:GetResourcePolicy",
           "secretsmanager:ListSecrets",
           "logs:Describe*",
           "logs:List*",
