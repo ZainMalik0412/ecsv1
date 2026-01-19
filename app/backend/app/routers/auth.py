@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.auth import create_access_token, verify_password
 from app.deps import CurrentUser, DBSession
 from app.models import User
-from app.schemas import LoginRequest, Token, UserMe, UserOut
+from app.schemas import LoginRequest, Token, UserMe
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

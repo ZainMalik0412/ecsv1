@@ -1,8 +1,8 @@
 """Module management endpoints."""
 
-from typing import List, Optional
+from typing import List
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, status
 
 from app.deps import CurrentUser, DBSession, RequireAdmin, RequireLecturer
 from app.models import Module, Role, User

@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, HTTPException
 
-from app.config import settings
 from app.deps import CurrentUser, DBSession
 from app.models import Attendance, AttendanceStatus, FaceEncoding, Role, Session, SessionStatus
 from app.schemas import FaceRegisterRequest, FaceRegisterResponse, FaceVerifyRequest, FaceVerifyResponse

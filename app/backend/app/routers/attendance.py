@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query
 
 from app.deps import CurrentUser, DBSession, RequireLecturer
 from app.models import Attendance, AttendanceStatus, Role, Session, SessionStatus, User
@@ -109,7 +109,7 @@ def update_attendance(
 def mark_attendance_manual(
     session_id: int,
     student_id: int,
-    status: AttendanceStatus,
+    attendance_status: AttendanceStatus,
     db: DBSession,
     current_user: RequireLecturer,
 ):
@@ -133,13 +133,13 @@ def mark_attendance_manual(
         attendance = Attendance(
             session_id=session_id,
             student_id=student_id,
-            status=status,
-            marked_at=datetime.utcnow() if status != AttendanceStatus.ABSENT else None,
+            status=attendance_status,
+            marked_at=datetime.utcnow() if attendance_status != AttendanceStatus.ABSENT else None,
         )
         db.add(attendance)
     else:
-        attendance.status = status
-        attendance.marked_at = datetime.utcnow() if status != AttendanceStatus.ABSENT else None
+        attendance.status = attendance_status
+        attendance.marked_at = datetime.utcnow() if attendance_status != AttendanceStatus.ABSENT else None
     db.commit()
     db.refresh(attendance)
     return AttendanceOut.model_validate(attendance)

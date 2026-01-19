@@ -6,7 +6,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.deps import CurrentUser, DBSession, RequireLecturer
-from app.models import Attendance, AttendanceStatus, FaceEncoding, Module, Role, Session, SessionStatus
+from app.models import Attendance, AttendanceStatus, Module, Role, Session, SessionStatus
 from app.schemas import (
     SessionCreate, SessionDetail, SessionOut, SessionUpdate, ModuleOut,
     LiveRecognitionRequest, LiveRecognitionResponse, RecognizedStudent,

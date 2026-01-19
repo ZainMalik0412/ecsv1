@@ -80,7 +80,7 @@ variable "db_username" {
 variable "github_org" {
   description = "GitHub organization or username"
   type        = string
-  default     = "zainmalik"
+  default     = "ZainMalik0412"
 }
 
 variable "github_repo" {

@@ -8,7 +8,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
-from app.deps import CurrentUser, DBSession, RequireAdmin, RequireLecturer
+from app.deps import CurrentUser, DBSession, RequireLecturer
 from app.models import Attendance, AttendanceStatus, Module, Role, Session, SessionStatus, User
 from app.schemas import (
     AttendanceReportRow, DashboardStats, StudentAttendanceStats, ModuleAttendanceStats,

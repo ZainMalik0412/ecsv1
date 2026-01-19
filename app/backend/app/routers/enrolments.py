@@ -1,7 +1,5 @@
 """Enrolment management endpoints (Admin only)."""
 
-from typing import List
-
 from fastapi import APIRouter, HTTPException, status
 
 from app.deps import DBSession, RequireAdmin
