@@ -39,6 +39,16 @@ export const login = async (username: string, password: string) => {
   return response.data
 }
 
+export const signup = async (data: {
+  username: string
+  password: string
+  full_name: string
+  email?: string
+}) => {
+  const response = await api.post('/auth/signup', data)
+  return response.data
+}
+
 export const getMe = async () => {
   const response = await api.get('/auth/me')
   return response.data

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -74,7 +74,13 @@ export default function LoginPage() {
               {isLoading ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>
-          <div className="mt-6 rounded-lg bg-muted p-4 text-sm">
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            Don't have an account?{' '}
+            <Link to="/signup" className="text-primary hover:underline">
+              Sign up
+            </Link>
+          </div>
+          <div className="mt-4 rounded-lg bg-muted p-4 text-sm">
             <p className="mb-2 font-medium">Demo Credentials:</p>
             <ul className="space-y-1 text-muted-foreground">
               <li><strong>Student:</strong> student / student</li>

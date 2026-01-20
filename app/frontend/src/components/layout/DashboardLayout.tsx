@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   LayoutDashboard,
   BookOpen,
@@ -16,6 +17,7 @@ import {
   X,
   BarChart3,
   CalendarDays,
+  AlertCircle,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -156,6 +158,24 @@ export default function DashboardLayout() {
           </button>
           <div className="flex-1" />
         </header>
+
+        {/* Face registration prompt for students */}
+        {user?.role === 'student' && !user?.has_face_registered && (
+          <Alert variant="warning" className="mx-4 mt-4 lg:mx-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>
+                You haven't registered your face yet. Face registration is required for attendance verification.
+              </span>
+              <Link to="/face-registration">
+                <Button size="sm" variant="outline" className="ml-4">
+                  <Camera className="mr-2 h-4 w-4" />
+                  Register Now
+                </Button>
+              </Link>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Page content */}
         <main className="flex-1 overflow-auto p-4 lg:p-6">

@@ -3,10 +3,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.auth import create_access_token, verify_password
+from app.auth import create_access_token, hash_password, verify_password
 from app.deps import CurrentUser, DBSession
-from app.models import User
-from app.schemas import LoginRequest, Token, UserMe
+from app.models import Role, User
+from app.schemas import LoginRequest, Token, UserMe, UserCreate, UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -56,4 +56,40 @@ def get_current_user_info(current_user: CurrentUser):
         has_face_registered=len(current_user.face_encodings) > 0,
         enrolled_module_ids=[m.id for m in current_user.enrolled_modules],
         taught_module_ids=[m.id for m in current_user.taught_modules],
+    )
+
+
+@router.post("/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+def signup(payload: UserCreate, db: DBSession):
+    """
+    Register a new user account.
+    
+    New users are created as students by default.
+    After signing up, users should register their face for attendance verification.
+    """
+    if db.query(User).filter(User.username == payload.username).first():
+        raise HTTPException(status_code=400, detail="Username already exists")
+    if payload.email and db.query(User).filter(User.email == payload.email).first():
+        raise HTTPException(status_code=400, detail="Email already exists")
+    
+    user = User(
+        username=payload.username,
+        email=payload.email,
+        full_name=payload.full_name,
+        role=Role.STUDENT,
+        hashed_password=hash_password(payload.password),
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    return UserOut(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role,
+        is_active=user.is_active,
+        created_at=user.created_at,
+        has_face_registered=False,
     )

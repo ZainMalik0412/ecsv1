@@ -1,5 +1,10 @@
 """Pytest fixtures for testing."""
 
+import os
+
+# Set test database URL BEFORE importing app modules
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine

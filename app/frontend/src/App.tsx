@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import { Toaster } from '@/components/ui/toaster'
 import LoginPage from '@/pages/LoginPage'
+import SignupPage from '@/pages/SignupPage'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import DashboardPage from '@/pages/DashboardPage'
 import ModulesPage from '@/pages/ModulesPage'
@@ -27,6 +28,7 @@ function App() {
     <>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route
           path="/"
           element={
