@@ -18,11 +18,16 @@ import io
 import logging
 from typing import List, Optional, Tuple
 
+import cv2
 import numpy as np
 from PIL import Image
 from scipy.spatial.distance import cosine
 
 from app.config import settings
+
+# Load OpenCV's pre-trained Haar cascade for face detection
+# This is much more accurate than simple image validation
+_face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 logger = logging.getLogger(__name__)
 
@@ -49,24 +54,47 @@ def decode_base64_image(image_base64: str) -> Image.Image:
 
 def detect_faces(image: Image.Image) -> List[Tuple[int, int, int, int]]:
     """
-    Detect faces in an image.
+    Detect faces in an image using OpenCV's Haar cascade classifier.
     
-    This is a simplified implementation that assumes a face is present
-    if the image meets minimum size requirements.
-    For production, integrate with a proper face detection model.
+    This provides accurate face detection that only identifies actual human faces,
+    not hands or other objects.
     
     Returns list of face locations as (top, right, bottom, left) tuples.
     """
-    width, height = image.size
+    # Convert PIL Image to OpenCV format (BGR)
+    img_array = np.array(image)
+    if len(img_array.shape) == 3 and img_array.shape[2] == 3:
+        # RGB to BGR
+        img_cv = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+    else:
+        img_cv = img_array
     
-    # Basic validation - image should be reasonably sized
-    if width < 50 or height < 50:
-        return []
+    # Convert to grayscale for face detection
+    gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
     
-    # For demo: assume one face in center of image
-    # In production, use proper face detection (e.g., MTCNN, RetinaFace)
-    margin = min(width, height) // 10
-    return [(margin, width - margin, height - margin, margin)]
+    # Detect faces using Haar cascade
+    # Parameters tuned for speed and accuracy:
+    # - scaleFactor=1.1: smaller value = more accurate but slower
+    # - minNeighbors=5: higher = fewer false positives
+    # - minSize=(30, 30): minimum face size to detect
+    faces = _face_cascade.detectMultiScale(
+        gray,
+        scaleFactor=1.1,
+        minNeighbors=5,
+        minSize=(30, 30),
+        flags=cv2.CASCADE_SCALE_IMAGE
+    )
+    
+    # Convert OpenCV format (x, y, w, h) to (top, right, bottom, left)
+    face_locations = []
+    for (x, y, w, h) in faces:
+        top = y
+        right = x + w
+        bottom = y + h
+        left = x
+        face_locations.append((top, right, bottom, left))
+    
+    return face_locations
 
 
 def _image_to_embedding(image: Image.Image) -> np.ndarray:
@@ -219,20 +247,19 @@ def extract_all_faces(image_base64: str) -> Tuple[List[np.ndarray], str]:
     
     Returns (list of encodings, message).
     Used by lecturers during live sessions to detect multiple students.
+    Uses OpenCV Haar cascade for accurate face-only detection.
     """
     try:
         image = decode_base64_image(image_base64)
     except Exception as e:
         return [], f"Failed to decode image: {str(e)}"
     
-    # For live recognition, detect multiple face regions
-    # In demo mode, we simulate detecting faces in different regions
     width, height = image.size
     
     if width < 50 or height < 50:
         return [], "Image too small"
     
-    # Detect faces - in production this would use proper face detection
+    # Detect faces using OpenCV Haar cascade - only detects actual faces
     face_locations = detect_faces(image)
     
     if len(face_locations) == 0:
