@@ -59,6 +59,21 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform init
 
+      - name: Delete existing RDS final snapshot if exists
+        run: |
+          # Delete existing final snapshot to prevent 'DBSnapshotAlreadyExists' error
+          SNAPSHOT_ID="attendancems-db-final-snapshot"
+          echo "Checking for existing snapshot: $SNAPSHOT_ID"
+          if aws rds describe-db-snapshots --db-snapshot-identifier "$SNAPSHOT_ID" 2>/dev/null; then
+            echo "Found existing snapshot, deleting..."
+            aws rds delete-db-snapshot --db-snapshot-identifier "$SNAPSHOT_ID"
+            echo "Waiting for snapshot deletion..."
+            aws rds wait db-snapshot-deleted --db-snapshot-identifier "$SNAPSHOT_ID" || true
+            echo "✅ Snapshot deleted"
+          else
+            echo "No existing snapshot found, proceeding..."
+          fi
+
       - name: Terraform Plan Destroy
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform plan -destroy -out=tfplan
