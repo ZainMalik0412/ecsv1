@@ -78,6 +78,66 @@ jobs:
           fail_ci_if_error: false
 
   # ============================================
+  # CHECK INFRASTRUCTURE - Fast check if infra exists
+  # ============================================
+  check-infrastructure:
+    name: Check Infrastructure
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      infra_exists: ${{ steps.check.outputs.infra_exists }}
+      needs_terraform: ${{ steps.check.outputs.needs_terraform }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Check if infrastructure exists
+        id: check
+        run: |
+          # Check if ECS cluster and service exist (indicates infra is up)
+          CLUSTER_EXISTS=$(aws ecs describe-clusters --clusters ${{ env.ECS_CLUSTER }} \
+            --query 'clusters[0].status' --output text 2>/dev/null || echo "MISSING")
+          
+          SERVICE_EXISTS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].status' --output text 2>/dev/null || echo "MISSING")
+          
+          ECR_EXISTS=$(aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }} \
+            --query 'repositories[0].repositoryName' --output text 2>/dev/null || echo "MISSING")
+          
+          # Check if terraform files changed in this commit
+          TF_CHANGED=$(git diff --name-only HEAD~1 HEAD -- 'infra/terraform/' 2>/dev/null | wc -l | tr -d ' ')
+          
+          echo "Cluster: $CLUSTER_EXISTS, Service: $SERVICE_EXISTS, ECR: $ECR_EXISTS, TF Changed: $TF_CHANGED"
+          
+          if [ "$CLUSTER_EXISTS" == "ACTIVE" ] && [ "$SERVICE_EXISTS" == "ACTIVE" ] && [ "$ECR_EXISTS" == "${{ env.ECR_REPOSITORY }}" ]; then
+            echo "✅ Infrastructure exists!"
+            echo "infra_exists=true" >> $GITHUB_OUTPUT
+            
+            # Only run terraform if terraform files changed
+            if [ "$TF_CHANGED" -gt "0" ]; then
+              echo "📝 Terraform files changed, will run terraform apply"
+              echo "needs_terraform=true" >> $GITHUB_OUTPUT
+            else
+              echo "⏭️ No terraform changes, skipping terraform apply"
+              echo "needs_terraform=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "❌ Infrastructure missing, need full terraform apply"
+            echo "infra_exists=false" >> $GITHUB_OUTPUT
+            echo "needs_terraform=true" >> $GITHUB_OUTPUT
+          fi
+
+  # ============================================
   # TERRAFORM PLAN - Runs on PRs
   # ============================================
   terraform-plan:
@@ -149,13 +209,16 @@ jobs:
             })
 
   # ============================================
-  # TERRAFORM APPLY - Creates infrastructure (runs first)
+  # TERRAFORM APPLY - Only runs if infrastructure missing OR terraform files changed
   # ============================================
   terraform-apply:
     name: Terraform Apply
     runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, check-infrastructure]
+    if: |
+      github.event_name == 'push' && 
+      github.ref == 'refs/heads/main' && 
+      needs.check-infrastructure.outputs.needs_terraform == 'true'
 
     steps:
       - name: Checkout
@@ -175,7 +238,6 @@ jobs:
 
       - name: Force unlock Terraform state if locked
         run: |
-          # Clean up any stale locks from previous failed runs
           aws dynamodb delete-item --table-name attendancems-terraform-locks \
             --key '{"LockID":{"S":"attendancems-terraform-state/prod/terraform.tfstate"}}' 2>/dev/null || true
           echo "✅ Cleared any stale state locks"
@@ -183,24 +245,20 @@ jobs:
       - name: Check for RDS snapshot to restore from
         id: check-snapshot
         run: |
-          # Check if there's a saved snapshot identifier from a previous destroy
           SNAPSHOT_ID=$(aws ssm get-parameter \
             --name "/attendancems/latest-db-snapshot" \
             --query 'Parameter.Value' \
             --output text 2>/dev/null || echo "")
           
           if [ -n "$SNAPSHOT_ID" ] && [ "$SNAPSHOT_ID" != "None" ]; then
-            # Verify the snapshot actually exists
             if aws rds describe-db-snapshots --db-snapshot-identifier "$SNAPSHOT_ID" &>/dev/null; then
               echo "📸 Found snapshot to restore from: $SNAPSHOT_ID"
               echo "snapshot_id=$SNAPSHOT_ID" >> $GITHUB_OUTPUT
               echo "has_snapshot=true" >> $GITHUB_OUTPUT
             else
-              echo "Snapshot $SNAPSHOT_ID no longer exists"
               echo "has_snapshot=false" >> $GITHUB_OUTPUT
             fi
           else
-            echo "No saved snapshot found, will create fresh database"
             echo "has_snapshot=false" >> $GITHUB_OUTPUT
           fi
 
@@ -212,22 +270,27 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: |
           if [ "${{ steps.check-snapshot.outputs.has_snapshot }}" == "true" ]; then
-            echo "🔄 Restoring database from snapshot: ${{ steps.check-snapshot.outputs.snapshot_id }}"
-            terraform apply -auto-approve -lock-timeout=5m \
+            echo "🔄 Restoring database from snapshot"
+            terraform apply -auto-approve -lock-timeout=5m -parallelism=20 \
               -var="db_snapshot_identifier=${{ steps.check-snapshot.outputs.snapshot_id }}"
           else
-            echo "📦 Creating fresh database"
-            terraform apply -auto-approve -lock-timeout=5m
+            terraform apply -auto-approve -lock-timeout=5m -parallelism=20
           fi
 
   # ============================================
-  # BUILD JOB - Builds and pushes Docker image (after infra exists)
+  # BUILD JOB - Runs in parallel if infra exists, otherwise waits for terraform
   # ============================================
   build:
     name: Build and Push
     runs-on: ubuntu-latest
-    needs: [test, terraform-apply]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, check-infrastructure, terraform-apply]
+    if: |
+      always() &&
+      github.event_name == 'push' && 
+      github.ref == 'refs/heads/main' &&
+      needs.test.result == 'success' &&
+      needs.check-infrastructure.result == 'success' &&
+      (needs.terraform-apply.result == 'success' || needs.terraform-apply.result == 'skipped')
     outputs:
       image: ${{ steps.build-image.outputs.image }}
       image_tag: ${{ steps.build-image.outputs.image_tag }}
