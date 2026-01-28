@@ -1,13 +1,16 @@
 """User management endpoints (Admin only)."""
 
+import logging
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.auth import hash_password
 from app.deps import DBSession, RequireAdmin
-from app.models import Role, User
+from app.models import Attendance, FaceEncoding, Role, User, enrolment_table
 from app.schemas import UserCreate, UserOut, UserUpdate
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -120,9 +123,26 @@ def update_user(user_id: int, payload: UserUpdate, db: DBSession, _: RequireAdmi
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: int, db: DBSession, _: RequireAdmin):
-    """Delete a user."""
+    """Delete a user and all their related data."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    db.delete(user)
-    db.commit()
+    
+    try:
+        # Delete attendance records first
+        db.query(Attendance).filter(Attendance.student_id == user_id).delete()
+        
+        # Delete face encodings
+        db.query(FaceEncoding).filter(FaceEncoding.user_id == user_id).delete()
+        
+        # Delete enrolments
+        db.execute(enrolment_table.delete().where(enrolment_table.c.student_id == user_id))
+        
+        # Now delete the user
+        db.delete(user)
+        db.commit()
+        logger.info(f"Deleted user {user_id} ({user.username}) and all related data")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to delete user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")
