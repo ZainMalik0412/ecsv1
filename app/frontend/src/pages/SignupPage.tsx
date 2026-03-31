@@ -53,9 +53,9 @@ export default function SignupPage() {
       })
       navigate('/login')
     } catch (error: unknown) {
-      const message = error instanceof Error 
-        ? error.message 
-        : (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Registration failed'
+      const axiosErr = error as { response?: { data?: { detail?: string } } }
+      const message = axiosErr?.response?.data?.detail
+        || (error instanceof Error ? error.message : 'Registration failed')
       toast({
         variant: 'destructive',
         title: 'Signup failed',

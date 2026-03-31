@@ -11,7 +11,6 @@
 # 4. Storage: Embeddings stored as binary blobs in PostgreSQL (via numpy tobytes/frombuffer)
 
 import base64
-import hashlib
 import io
 import logging
 from typing import List, Optional, Tuple
@@ -180,39 +179,69 @@ def _non_max_suppression(boxes: List, overlap_thresh: float = 0.3) -> List[Tuple
 
 def _image_to_embedding(image: Image.Image) -> np.ndarray:
     # Generate a pseudo-embedding from image features.
-    # This uses image statistics and a hash-based approach for demo purposes.
+    # Uses robust image statistics and structural features for face comparison.
     # For production, use a proper face embedding model (e.g., FaceNet, ArcFace).
     # Resize to standard size
     img_resized = image.resize((64, 64))
     img_array = np.array(img_resized, dtype=np.float32) / 255.0
     
-    # Extract features from image
+    h, w = img_array.shape[:2]
+    grid_size = 4
+    gh, gw = h // grid_size, w // grid_size
+    gray = np.mean(img_array, axis=2)
+    
+    # Apply histogram equalization on grayscale for lighting robustness
+    gray_uint8 = (gray * 255).astype(np.uint8)
+    gray_eq = cv2.equalizeHist(gray_uint8).astype(np.float32) / 255.0
+    
     features = []
     
-    # Mean and std per channel
+    # 1. Mean and std per channel (6 features)
     for c in range(3):
         features.append(img_array[:, :, c].mean())
         features.append(img_array[:, :, c].std())
     
-    # Spatial features (divide into grid)
-    grid_size = 4
-    h, w = img_array.shape[:2]
-    gh, gw = h // grid_size, w // grid_size
+    # 2. Spatial grid means - equalised grayscale (16 features)
     for i in range(grid_size):
         for j in range(grid_size):
-            cell = img_array[i*gh:(i+1)*gh, j*gw:(j+1)*gw]
+            cell = gray_eq[i*gh:(i+1)*gh, j*gw:(j+1)*gw]
             features.append(cell.mean())
     
-    # Histogram features
+    # 3. Histogram features per channel (24 features)
     for c in range(3):
         hist, _ = np.histogram(img_array[:, :, c].flatten(), bins=8, range=(0, 1))
         features.extend(hist / hist.sum())
     
-    # Hash-based features for uniqueness
-    img_bytes = img_resized.tobytes()
-    hash_bytes = hashlib.sha256(img_bytes).digest()
-    hash_features = [b / 255.0 for b in hash_bytes[:32]]
-    features.extend(hash_features)
+    # 4. Spatial grid standard deviations - captures texture (16 features)
+    for i in range(grid_size):
+        for j in range(grid_size):
+            cell = gray_eq[i*gh:(i+1)*gh, j*gw:(j+1)*gw]
+            features.append(cell.std())
+    
+    # 5. Gradient magnitude in spatial grid - captures edges/structure (16 features)
+    gy, gx = np.gradient(gray_eq)
+    grad_mag = np.sqrt(gx**2 + gy**2)
+    for i in range(grid_size):
+        for j in range(grid_size):
+            cell = grad_mag[i*gh:(i+1)*gh, j*gw:(j+1)*gw]
+            features.append(cell.mean())
+    
+    # 6. Per-channel spatial grid means - captures colour distribution (48 features)
+    for c in range(3):
+        ch = img_array[:, :, c]
+        for i in range(grid_size):
+            for j in range(grid_size):
+                cell = ch[i*gh:(i+1)*gh, j*gw:(j+1)*gw]
+                features.append(cell.mean())
+    
+    # 7. Horizontal symmetry + overall brightness (2 features)
+    left_half = gray_eq[:, :w//2]
+    right_half = np.fliplr(gray_eq[:, w//2:])
+    min_w = min(left_half.shape[1], right_half.shape[1])
+    features.append(np.mean(np.abs(left_half[:, :min_w] - right_half[:, :min_w])))
+    features.append(gray_eq.mean())
+    
+    # Total: 6 + 16 + 24 + 16 + 16 + 48 + 2 = 128 = EMBEDDING_SIZE
     
     # Pad or truncate to EMBEDDING_SIZE
     embedding = np.array(features[:EMBEDDING_SIZE], dtype=np.float64)
