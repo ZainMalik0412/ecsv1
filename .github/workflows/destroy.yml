@@ -67,6 +67,7 @@ jobs:
         run: terraform init
 
       - name: Save RDS snapshot before deletion
+        id: snapshot
         run: |
           echo "📸 Saving RDS snapshot before deletion..."
           
@@ -82,15 +83,22 @@ jobs:
             echo "  Creating snapshot: $SNAPSHOT_ID"
             aws rds create-db-snapshot \
               --db-instance-identifier attendancems-db \
-              --db-snapshot-identifier "$SNAPSHOT_ID" 2>/dev/null || true
+              --db-snapshot-identifier "$SNAPSHOT_ID"
+            
+            # Wait for the snapshot to finish (critical - must complete before RDS is deleted)
+            echo "  Waiting for snapshot to become available (this may take a few minutes)..."
+            aws rds wait db-snapshot-available \
+              --db-snapshot-identifier "$SNAPSHOT_ID"
+            echo "✅ Snapshot $SNAPSHOT_ID is available"
             
             # Save snapshot ID to SSM
             aws ssm put-parameter \
               --name "/attendancems/latest-db-snapshot" \
               --value "$SNAPSHOT_ID" \
               --type String \
-              --overwrite 2>/dev/null || true
+              --overwrite
             echo "✅ Snapshot $SNAPSHOT_ID saved to SSM"
+            echo "snapshot_id=$SNAPSHOT_ID" >> $GITHUB_OUTPUT
           else
             echo "  No RDS instance found, checking for existing snapshots..."
             LATEST=$(aws rds describe-db-snapshots \
@@ -103,6 +111,7 @@ jobs:
                 --type String \
                 --overwrite 2>/dev/null || true
               echo "✅ Using existing snapshot: $LATEST"
+              echo "snapshot_id=$LATEST" >> $GITHUB_OUTPUT
             fi
           fi
 
@@ -323,6 +332,7 @@ jobs:
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Region | ${{ env.AWS_REGION }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Triggered by | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| DB Snapshot | ${{ steps.snapshot.outputs.snapshot_id || 'none' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ job.status }}" == "success" ]; then
