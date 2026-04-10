@@ -45,9 +45,9 @@ variable "desired_count" {
   type        = number
 }
 
-# Private subnet IDs where ECS tasks are placed
-variable "private_subnets" {
-  description = "List of private subnet IDs for ECS task placement"
+# Subnet IDs where ECS tasks are placed (public subnets to avoid NAT Gateway costs)
+variable "ecs_subnets" {
+  description = "List of subnet IDs for ECS task placement"
   type        = list(string)
 }
 

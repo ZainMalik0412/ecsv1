@@ -32,7 +32,7 @@ variable "db_username" {
   description = "Database master username"
   type        = string
   # Marked sensitive to prevent it from appearing in Terraform output/logs
-  sensitive   = true
+  sensitive = true
 }
 
 # Private subnet IDs where the database is placed

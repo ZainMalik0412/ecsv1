@@ -53,13 +53,13 @@ resource "aws_route53_record" "cert_validation" {
   # Allow overwriting existing records (safe for validation CNAMEs)
   allow_overwrite = true
   # The DNS record name provided by ACM for validation
-  name    = each.value.name
+  name = each.value.name
   # The DNS record value provided by ACM for validation
   records = [each.value.record]
   # Short TTL so changes propagate quickly
-  ttl     = 60
+  ttl = 60
   # Record type (always CNAME for ACM DNS validation)
-  type    = each.value.type
+  type = each.value.type
   # Place the record in our hosted zone
   zone_id = data.aws_route53_zone.main.zone_id
 }

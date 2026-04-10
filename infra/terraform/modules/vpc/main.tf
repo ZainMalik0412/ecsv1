@@ -8,7 +8,7 @@
 # This abstracts the complexity of creating route tables, IGW, NAT, etc.
 module "vpc" {
   # Source from the Terraform Registry - maintained by HashiCorp and AWS
-  source  = "terraform-aws-modules/vpc/aws"
+  source = "terraform-aws-modules/vpc/aws"
   # Pin to major version 5.x for stability while allowing patch updates
   version = "~> 5.0"
 
@@ -25,11 +25,11 @@ module "vpc" {
   # Public subnets for the ALB - directly reachable from the internet
   public_subnets = ["10.0.101.0/24", "10.0.102.0/24"]
 
-  # Enable a NAT Gateway so private subnet resources can reach the internet
-  # Required for ECS tasks to pull images from ECR and call AWS APIs
-  enable_nat_gateway = true
-  # Use a single NAT Gateway to minimise costs (~$35/month per gateway)
-  single_nat_gateway = true
+  # NAT Gateway disabled to save ~$35/month
+  # ECS tasks use public subnets with assign_public_ip instead
+  # RDS remains in private subnets (no internet access needed)
+  enable_nat_gateway = false
+  single_nat_gateway = false
   # Enable DNS hostnames so EC2/ECS resources get DNS names within the VPC
   enable_dns_hostnames = true
   # Enable DNS resolution support for the VPC
@@ -47,11 +47,11 @@ module "vpc" {
 # ============================================================================
 resource "aws_security_group" "alb" {
   # Unique name for the security group within the VPC
-  name        = "${var.app_name}-alb-sg"
+  name = "${var.app_name}-alb-sg"
   # Human-readable description shown in the AWS console
   description = "Security group for ALB"
   # Associate this security group with our VPC
-  vpc_id      = module.vpc.vpc_id
+  vpc_id = module.vpc.vpc_id
 
   # Allow inbound HTTP traffic (port 80) from any IP address
   # Required so the ALB can redirect HTTP requests to HTTPS
@@ -92,11 +92,11 @@ resource "aws_security_group" "alb" {
 # ============================================================================
 resource "aws_security_group" "ecs" {
   # Unique name for the security group
-  name        = "${var.app_name}-ecs-sg"
+  name = "${var.app_name}-ecs-sg"
   # Human-readable description
   description = "Security group for ECS tasks"
   # Associate with our VPC
-  vpc_id      = module.vpc.vpc_id
+  vpc_id = module.vpc.vpc_id
 
   # Only allow inbound traffic on the container port, and only from the ALB
   # This ensures containers are never directly accessible from the internet
@@ -128,11 +128,11 @@ resource "aws_security_group" "ecs" {
 # ============================================================================
 resource "aws_security_group" "rds" {
   # Unique name for the security group
-  name        = "${var.app_name}-rds-sg"
+  name = "${var.app_name}-rds-sg"
   # Human-readable description
   description = "Security group for RDS"
   # Associate with our VPC
-  vpc_id      = module.vpc.vpc_id
+  vpc_id = module.vpc.vpc_id
 
   # Only allow inbound PostgreSQL traffic (port 5432) from ECS tasks
   # This ensures the database is only accessible from application containers

@@ -79,9 +79,9 @@ module "acm" {
   source = "./modules/acm"
 
   # Domain and naming configuration
-  domain_name  = var.domain_name
-  subdomain    = var.subdomain
-  app_name     = var.app_name
+  domain_name = var.domain_name
+  subdomain   = var.subdomain
+  app_name    = var.app_name
   # ALB details needed for the Route 53 alias record
   alb_dns_name = module.alb.dns_name
   alb_zone_id  = module.alb.zone_id
@@ -102,7 +102,7 @@ module "alb" {
   alb_security_group_id = module.vpc.alb_security_group_id
   container_port        = var.container_port
   # SSL certificate for HTTPS listener
-  certificate_arn       = module.acm.certificate_arn
+  certificate_arn = module.acm.certificate_arn
 }
 
 # ============================================================================
@@ -114,11 +114,11 @@ module "rds" {
   source = "./modules/rds"
 
   # Database configuration
-  app_name              = var.app_name
-  db_instance_class     = var.db_instance_class
-  db_allocated_storage  = var.db_allocated_storage
-  db_name               = var.db_name
-  db_username           = var.db_username
+  app_name             = var.app_name
+  db_instance_class    = var.db_instance_class
+  db_allocated_storage = var.db_allocated_storage
+  db_name              = var.db_name
+  db_username          = var.db_username
   # Network placement in private subnets with RDS security group
   private_subnets       = module.vpc.private_subnets
   rds_security_group_id = module.vpc.rds_security_group_id
@@ -136,16 +136,17 @@ module "ecs" {
   source = "./modules/ecs"
 
   # Application and environment configuration
-  app_name         = var.app_name
-  environment      = var.environment
-  aws_region       = var.aws_region
+  app_name    = var.app_name
+  environment = var.environment
+  aws_region  = var.aws_region
   # Container resource allocation
   container_port   = var.container_port
   container_cpu    = var.container_cpu
   container_memory = var.container_memory
   desired_count    = var.desired_count
-  # Network placement in private subnets with ECS security group
-  private_subnets       = module.vpc.private_subnets
+  # Network placement in public subnets (NAT Gateway removed for cost savings)
+  # Security maintained via security groups (ECS SG only allows ALB inbound)
+  ecs_subnets           = module.vpc.public_subnets
   ecs_security_group_id = module.vpc.ecs_security_group_id
   # ECR repository URL for pulling the Docker image
   ecr_repository_url = module.ecr.repository_url

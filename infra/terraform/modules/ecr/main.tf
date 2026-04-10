@@ -36,14 +36,14 @@ resource "aws_ecr_lifecycle_policy" "app" {
         # Priority determines rule evaluation order (lower = higher priority)
         rulePriority = 1
         # Human-readable description of what this rule does
-        description = "Keep last 10 images"
+        description = "Keep last 3 images"
         selection = {
           # Apply to all images regardless of tag status
           tagStatus = "any"
           # Trigger when image count exceeds the threshold
           countType = "imageCountMoreThan"
-          # Keep only the 10 most recent images
-          countNumber = 10
+          # Keep only the 3 most recent images to minimise storage costs
+          countNumber = 3
         }
         action = {
           # Remove images that match the selection criteria

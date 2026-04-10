@@ -257,7 +257,7 @@ resource "aws_iam_role_policy" "github_actions_terraform_state" {
         Action = [
           "s3:GetObject",    # Read the current state file
           "s3:PutObject",    # Write updated state after apply
-          "s3:DeleteObject",  # Delete state during destroy cleanup
+          "s3:DeleteObject", # Delete state during destroy cleanup
           "s3:ListBucket"    # List bucket contents for state discovery
         ]
         Resource = [
@@ -272,9 +272,9 @@ resource "aws_iam_role_policy" "github_actions_terraform_state" {
         Sid    = "DynamoDBLockAccess"
         Effect = "Allow"
         Action = [
-          "dynamodb:GetItem",    # Check if state is locked
-          "dynamodb:PutItem",    # Acquire a lock before operations
-          "dynamodb:DeleteItem"  # Release the lock after operations
+          "dynamodb:GetItem",   # Check if state is locked
+          "dynamodb:PutItem",   # Acquire a lock before operations
+          "dynamodb:DeleteItem" # Release the lock after operations
         ]
         # Scoped to only the locks table
         Resource = aws_dynamodb_table.terraform_locks.arn
@@ -304,27 +304,27 @@ resource "aws_iam_role_policy" "github_actions_terraform_infra" {
         Sid    = "TerraformReadAccess"
         Effect = "Allow"
         Action = [
-          "ec2:Describe*",                      # VPC, subnets, security groups, NAT, EIPs
-          "elasticloadbalancing:Describe*",      # ALB, target groups, listeners
-          "rds:Describe*",                       # DB instances, snapshots, subnet groups
-          "rds:ListTagsForResource",             # Read tags on RDS resources
-          "secretsmanager:Describe*",            # Secret metadata
-          "secretsmanager:GetSecretValue",       # Read secret values (for state)
-          "secretsmanager:GetResourcePolicy",    # Read secret resource policies
-          "secretsmanager:ListSecrets",          # List all secrets
-          "logs:Describe*",                      # CloudWatch log group details
-          "logs:List*",                          # List log groups and streams
-          "acm:Describe*",                       # Certificate details and status
-          "acm:List*",                           # List certificates
-          "route53:Get*",                        # Hosted zone and record details
-          "route53:List*",                       # List zones and records
-          "iam:Get*",                            # Role and policy details
-          "iam:List*",                           # List roles and policies
-          "ecr:Describe*",                       # Repository details
-          "ecr:List*",                           # List repositories and images
-          "ecr:GetLifecyclePolicy",              # Read lifecycle policy config
-          "ecs:Describe*",                       # Cluster, service, task details
-          "ecs:List*"                            # List clusters, services, tasks
+          "ec2:Describe*",                    # VPC, subnets, security groups, NAT, EIPs
+          "elasticloadbalancing:Describe*",   # ALB, target groups, listeners
+          "rds:Describe*",                    # DB instances, snapshots, subnet groups
+          "rds:ListTagsForResource",          # Read tags on RDS resources
+          "secretsmanager:Describe*",         # Secret metadata
+          "secretsmanager:GetSecretValue",    # Read secret values (for state)
+          "secretsmanager:GetResourcePolicy", # Read secret resource policies
+          "secretsmanager:ListSecrets",       # List all secrets
+          "logs:Describe*",                   # CloudWatch log group details
+          "logs:List*",                       # List log groups and streams
+          "acm:Describe*",                    # Certificate details and status
+          "acm:List*",                        # List certificates
+          "route53:Get*",                     # Hosted zone and record details
+          "route53:List*",                    # List zones and records
+          "iam:Get*",                         # Role and policy details
+          "iam:List*",                        # List roles and policies
+          "ecr:Describe*",                    # Repository details
+          "ecr:List*",                        # List repositories and images
+          "ecr:GetLifecyclePolicy",           # Read lifecycle policy config
+          "ecs:Describe*",                    # Cluster, service, task details
+          "ecs:List*"                         # List clusters, services, tasks
         ]
         Resource = "*"
       },
@@ -334,44 +334,44 @@ resource "aws_iam_role_policy" "github_actions_terraform_infra" {
         Sid    = "TerraformVPCAccess"
         Effect = "Allow"
         Action = [
-          "ec2:CreateVpc",                       # Create the VPC
-          "ec2:DeleteVpc",                       # Delete the VPC on destroy
-          "ec2:ModifyVpcAttribute",              # Enable DNS hostnames/support
-          "ec2:CreateSubnet",                    # Create public and private subnets
-          "ec2:DeleteSubnet",                    # Delete subnets on destroy
-          "ec2:CreateRouteTable",                # Create route tables for subnets
-          "ec2:DeleteRouteTable",                # Delete route tables on destroy
-          "ec2:CreateRoute",                     # Add routes (e.g. to NAT/IGW)
-          "ec2:DeleteRoute",                     # Remove routes on destroy
-          "ec2:AssociateRouteTable",             # Associate route tables with subnets
-          "ec2:DisassociateRouteTable",          # Disassociate on destroy
-          "ec2:CreateInternetGateway",           # Create IGW for public internet access
-          "ec2:DeleteInternetGateway",           # Delete IGW on destroy
-          "ec2:AttachInternetGateway",           # Attach IGW to VPC
-          "ec2:DetachInternetGateway",           # Detach IGW on destroy
-          "ec2:CreateNatGateway",                # Create NAT for private subnet internet
-          "ec2:DeleteNatGateway",                # Delete NAT on destroy
-          "ec2:AllocateAddress",                 # Allocate Elastic IP for NAT Gateway
-          "ec2:ReleaseAddress",                  # Release Elastic IP on destroy
-          "ec2:AssociateAddress",                # Associate EIP with NAT
-          "ec2:DisassociateAddress",             # Disassociate EIP on destroy
-          "ec2:CreateSecurityGroup",             # Create SGs for ALB, ECS, RDS
-          "ec2:DeleteSecurityGroup",             # Delete SGs on destroy
-          "ec2:AuthorizeSecurityGroupIngress",   # Add inbound rules
-          "ec2:AuthorizeSecurityGroupEgress",    # Add outbound rules
-          "ec2:RevokeSecurityGroupIngress",      # Remove inbound rules
-          "ec2:RevokeSecurityGroupEgress",       # Remove outbound rules
-          "ec2:CreateTags",                      # Tag EC2 resources
-          "ec2:DeleteTags",                      # Remove tags on destroy
-          "ec2:CreateNetworkInterface",          # Create ENIs (used by Fargate)
-          "ec2:DeleteNetworkInterface",          # Delete ENIs on destroy
-          "ec2:DetachNetworkInterface",          # Detach ENIs before deletion
-          "ec2:CreateNetworkAcl",                # Create network ACLs
-          "ec2:DeleteNetworkAcl",                # Delete ACLs on destroy
-          "ec2:CreateNetworkAclEntry",           # Add ACL rules
-          "ec2:DeleteNetworkAclEntry",           # Remove ACL rules
-          "ec2:ReplaceNetworkAclEntry",          # Update ACL rules
-          "ec2:ReplaceNetworkAclAssociation"     # Change ACL subnet associations
+          "ec2:CreateVpc",                     # Create the VPC
+          "ec2:DeleteVpc",                     # Delete the VPC on destroy
+          "ec2:ModifyVpcAttribute",            # Enable DNS hostnames/support
+          "ec2:CreateSubnet",                  # Create public and private subnets
+          "ec2:DeleteSubnet",                  # Delete subnets on destroy
+          "ec2:CreateRouteTable",              # Create route tables for subnets
+          "ec2:DeleteRouteTable",              # Delete route tables on destroy
+          "ec2:CreateRoute",                   # Add routes (e.g. to NAT/IGW)
+          "ec2:DeleteRoute",                   # Remove routes on destroy
+          "ec2:AssociateRouteTable",           # Associate route tables with subnets
+          "ec2:DisassociateRouteTable",        # Disassociate on destroy
+          "ec2:CreateInternetGateway",         # Create IGW for public internet access
+          "ec2:DeleteInternetGateway",         # Delete IGW on destroy
+          "ec2:AttachInternetGateway",         # Attach IGW to VPC
+          "ec2:DetachInternetGateway",         # Detach IGW on destroy
+          "ec2:CreateNatGateway",              # Create NAT for private subnet internet
+          "ec2:DeleteNatGateway",              # Delete NAT on destroy
+          "ec2:AllocateAddress",               # Allocate Elastic IP for NAT Gateway
+          "ec2:ReleaseAddress",                # Release Elastic IP on destroy
+          "ec2:AssociateAddress",              # Associate EIP with NAT
+          "ec2:DisassociateAddress",           # Disassociate EIP on destroy
+          "ec2:CreateSecurityGroup",           # Create SGs for ALB, ECS, RDS
+          "ec2:DeleteSecurityGroup",           # Delete SGs on destroy
+          "ec2:AuthorizeSecurityGroupIngress", # Add inbound rules
+          "ec2:AuthorizeSecurityGroupEgress",  # Add outbound rules
+          "ec2:RevokeSecurityGroupIngress",    # Remove inbound rules
+          "ec2:RevokeSecurityGroupEgress",     # Remove outbound rules
+          "ec2:CreateTags",                    # Tag EC2 resources
+          "ec2:DeleteTags",                    # Remove tags on destroy
+          "ec2:CreateNetworkInterface",        # Create ENIs (used by Fargate)
+          "ec2:DeleteNetworkInterface",        # Delete ENIs on destroy
+          "ec2:DetachNetworkInterface",        # Detach ENIs before deletion
+          "ec2:CreateNetworkAcl",              # Create network ACLs
+          "ec2:DeleteNetworkAcl",              # Delete ACLs on destroy
+          "ec2:CreateNetworkAclEntry",         # Add ACL rules
+          "ec2:DeleteNetworkAclEntry",         # Remove ACL rules
+          "ec2:ReplaceNetworkAclEntry",        # Update ACL rules
+          "ec2:ReplaceNetworkAclAssociation"   # Change ACL subnet associations
         ]
         Resource = "*"
       },
@@ -381,14 +381,14 @@ resource "aws_iam_role_policy" "github_actions_terraform_infra" {
         Sid    = "TerraformALBAccess"
         Effect = "Allow"
         Action = [
-          "elasticloadbalancing:Create*",        # Create ALB, TG, listeners
-          "elasticloadbalancing:Delete*",         # Delete ALB resources on destroy
-          "elasticloadbalancing:Modify*",         # Modify ALB attributes
-          "elasticloadbalancing:Register*",       # Register targets in target groups
-          "elasticloadbalancing:Deregister*",     # Deregister targets
-          "elasticloadbalancing:Set*",            # Set ALB attributes
-          "elasticloadbalancing:AddTags",         # Tag ALB resources
-          "elasticloadbalancing:RemoveTags"       # Remove tags on destroy
+          "elasticloadbalancing:Create*",     # Create ALB, TG, listeners
+          "elasticloadbalancing:Delete*",     # Delete ALB resources on destroy
+          "elasticloadbalancing:Modify*",     # Modify ALB attributes
+          "elasticloadbalancing:Register*",   # Register targets in target groups
+          "elasticloadbalancing:Deregister*", # Deregister targets
+          "elasticloadbalancing:Set*",        # Set ALB attributes
+          "elasticloadbalancing:AddTags",     # Tag ALB resources
+          "elasticloadbalancing:RemoveTags"   # Remove tags on destroy
         ]
         Resource = "*"
       },
@@ -398,18 +398,18 @@ resource "aws_iam_role_policy" "github_actions_terraform_infra" {
         Sid    = "TerraformRDSAccess"
         Effect = "Allow"
         Action = [
-          "rds:CreateDBInstance",                 # Create the PostgreSQL database
-          "rds:DeleteDBInstance",                 # Delete the database on destroy
-          "rds:ModifyDBInstance",                 # Modify DB settings
-          "rds:CreateDBSubnetGroup",              # Create DB subnet group
-          "rds:DeleteDBSubnetGroup",              # Delete subnet group on destroy
-          "rds:ModifyDBSubnetGroup",              # Modify subnet group membership
-          "rds:AddTagsToResource",                # Tag RDS resources
-          "rds:RemoveTagsFromResource",           # Remove tags on destroy
-          "rds:CreateDBSnapshot",                 # Create snapshots before destroy
-          "rds:DeleteDBSnapshot",                 # Clean up old snapshots
-          "rds:RestoreDBInstanceFromDBSnapshot",  # Restore from snapshot on rebuild
-          "rds:DescribeDBSnapshots"               # List available snapshots
+          "rds:CreateDBInstance",                # Create the PostgreSQL database
+          "rds:DeleteDBInstance",                # Delete the database on destroy
+          "rds:ModifyDBInstance",                # Modify DB settings
+          "rds:CreateDBSubnetGroup",             # Create DB subnet group
+          "rds:DeleteDBSubnetGroup",             # Delete subnet group on destroy
+          "rds:ModifyDBSubnetGroup",             # Modify subnet group membership
+          "rds:AddTagsToResource",               # Tag RDS resources
+          "rds:RemoveTagsFromResource",          # Remove tags on destroy
+          "rds:CreateDBSnapshot",                # Create snapshots before destroy
+          "rds:DeleteDBSnapshot",                # Clean up old snapshots
+          "rds:RestoreDBInstanceFromDBSnapshot", # Restore from snapshot on rebuild
+          "rds:DescribeDBSnapshots"              # List available snapshots
         ]
         Resource = "*"
       },
@@ -419,9 +419,9 @@ resource "aws_iam_role_policy" "github_actions_terraform_infra" {
         Sid    = "SSMParameterAccess"
         Effect = "Allow"
         Action = [
-          "ssm:GetParameter",     # Read the snapshot ID parameter
-          "ssm:PutParameter",     # Store the snapshot ID after destroy
-          "ssm:DeleteParameter"   # Clean up parameters
+          "ssm:GetParameter",   # Read the snapshot ID parameter
+          "ssm:PutParameter",   # Store the snapshot ID after destroy
+          "ssm:DeleteParameter" # Clean up parameters
         ]
         # Scoped to only parameters under the app namespace
         Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/attendancems/*"
@@ -432,12 +432,12 @@ resource "aws_iam_role_policy" "github_actions_terraform_infra" {
         Sid    = "TerraformSecretsAccess"
         Effect = "Allow"
         Action = [
-          "secretsmanager:CreateSecret",    # Create new secrets
-          "secretsmanager:DeleteSecret",    # Delete secrets on destroy
-          "secretsmanager:UpdateSecret",    # Update secret metadata
-          "secretsmanager:PutSecretValue",  # Store secret values
-          "secretsmanager:TagResource",     # Tag secrets
-          "secretsmanager:UntagResource"    # Remove tags on destroy
+          "secretsmanager:CreateSecret",   # Create new secrets
+          "secretsmanager:DeleteSecret",   # Delete secrets on destroy
+          "secretsmanager:UpdateSecret",   # Update secret metadata
+          "secretsmanager:PutSecretValue", # Store secret values
+          "secretsmanager:TagResource",    # Tag secrets
+          "secretsmanager:UntagResource"   # Remove tags on destroy
         ]
         # Scoped to only secrets under the app namespace
         Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.app_name}/*"
@@ -448,17 +448,17 @@ resource "aws_iam_role_policy" "github_actions_terraform_infra" {
         Sid    = "TerraformECSAccess"
         Effect = "Allow"
         Action = [
-          "ecs:CreateCluster",                   # Create the ECS cluster
-          "ecs:DeleteCluster",                   # Delete cluster on destroy
-          "ecs:CreateService",                   # Create the Fargate service
-          "ecs:DeleteService",                   # Delete service on destroy
-          "ecs:UpdateService",                   # Update service (new task def, count)
-          "ecs:UpdateCluster",                   # Update cluster settings
-          "ecs:PutClusterCapacityProviders",     # Configure Fargate/Spot providers
-          "ecs:TagResource",                     # Tag ECS resources
-          "ecs:UntagResource",                   # Remove tags on destroy
-          "ecs:RegisterTaskDefinition",          # Register new task definitions
-          "ecs:DeregisterTaskDefinition"         # Deregister old task definitions
+          "ecs:CreateCluster",               # Create the ECS cluster
+          "ecs:DeleteCluster",               # Delete cluster on destroy
+          "ecs:CreateService",               # Create the Fargate service
+          "ecs:DeleteService",               # Delete service on destroy
+          "ecs:UpdateService",               # Update service (new task def, count)
+          "ecs:UpdateCluster",               # Update cluster settings
+          "ecs:PutClusterCapacityProviders", # Configure Fargate/Spot providers
+          "ecs:TagResource",                 # Tag ECS resources
+          "ecs:UntagResource",               # Remove tags on destroy
+          "ecs:RegisterTaskDefinition",      # Register new task definitions
+          "ecs:DeregisterTaskDefinition"     # Deregister old task definitions
         ]
         Resource = "*"
       },
@@ -468,12 +468,12 @@ resource "aws_iam_role_policy" "github_actions_terraform_infra" {
         Sid    = "TerraformLogsAccess"
         Effect = "Allow"
         Action = [
-          "logs:CreateLogGroup",      # Create log group for ECS
-          "logs:DeleteLogGroup",      # Delete log group on destroy
-          "logs:DescribeLogGroups",   # Check log group state
-          "logs:PutRetentionPolicy",  # Set log retention period (7 days)
-          "logs:TagResource",         # Tag log groups
-          "logs:UntagResource"        # Remove tags on destroy
+          "logs:CreateLogGroup",     # Create log group for ECS
+          "logs:DeleteLogGroup",     # Delete log group on destroy
+          "logs:DescribeLogGroups",  # Check log group state
+          "logs:PutRetentionPolicy", # Set log retention period (7 days)
+          "logs:TagResource",        # Tag log groups
+          "logs:UntagResource"       # Remove tags on destroy
         ]
         Resource = "*"
       },
@@ -483,11 +483,11 @@ resource "aws_iam_role_policy" "github_actions_terraform_infra" {
         Sid    = "TerraformACMAccess"
         Effect = "Allow"
         Action = [
-          "acm:RequestCertificate",         # Request a new SSL certificate
-          "acm:DeleteCertificate",          # Delete certificate on destroy
-          "acm:AddTagsToCertificate",       # Tag certificates
-          "acm:RemoveTagsFromCertificate",  # Remove tags on destroy
-          "acm:GetCertificate"              # Retrieve certificate details
+          "acm:RequestCertificate",        # Request a new SSL certificate
+          "acm:DeleteCertificate",         # Delete certificate on destroy
+          "acm:AddTagsToCertificate",      # Tag certificates
+          "acm:RemoveTagsFromCertificate", # Remove tags on destroy
+          "acm:GetCertificate"             # Retrieve certificate details
         ]
         Resource = "*"
       },
@@ -497,11 +497,11 @@ resource "aws_iam_role_policy" "github_actions_terraform_infra" {
         Sid    = "TerraformRoute53Access"
         Effect = "Allow"
         Action = [
-          "route53:ChangeResourceRecordSets",  # Create/update/delete DNS records
-          "route53:GetChange",                 # Check if DNS changes have propagated
-          "route53:ListHostedZones",           # Find the hosted zone
-          "route53:ListHostedZonesByName",     # Look up zone by domain name
-          "route53:ListResourceRecordSets"     # List existing DNS records
+          "route53:ChangeResourceRecordSets", # Create/update/delete DNS records
+          "route53:GetChange",                # Check if DNS changes have propagated
+          "route53:ListHostedZones",          # Find the hosted zone
+          "route53:ListHostedZonesByName",    # Look up zone by domain name
+          "route53:ListResourceRecordSets"    # List existing DNS records
         ]
         Resource = [
           # Allow operations on any hosted zone
@@ -516,16 +516,16 @@ resource "aws_iam_role_policy" "github_actions_terraform_infra" {
         Sid    = "TerraformIAMAccess"
         Effect = "Allow"
         Action = [
-          "iam:CreateRole",              # Create ECS task roles
-          "iam:DeleteRole",              # Delete roles on destroy
-          "iam:AttachRolePolicy",        # Attach AWS-managed policies
-          "iam:DetachRolePolicy",        # Detach policies on destroy
-          "iam:PutRolePolicy",           # Create inline policies
-          "iam:DeleteRolePolicy",        # Delete inline policies on destroy
-          "iam:TagRole",                 # Tag IAM roles
+          "iam:CreateRole",             # Create ECS task roles
+          "iam:DeleteRole",             # Delete roles on destroy
+          "iam:AttachRolePolicy",       # Attach AWS-managed policies
+          "iam:DetachRolePolicy",       # Detach policies on destroy
+          "iam:PutRolePolicy",          # Create inline policies
+          "iam:DeleteRolePolicy",       # Delete inline policies on destroy
+          "iam:TagRole",                # Tag IAM roles
           "iam:UntagRole",              # Remove tags on destroy
-          "iam:UpdateAssumeRolePolicy",  # Update role trust policies
-          "iam:PassRole"                 # Allow ECS to use the roles
+          "iam:UpdateAssumeRolePolicy", # Update role trust policies
+          "iam:PassRole"                # Allow ECS to use the roles
         ]
         Resource = "*"
       },

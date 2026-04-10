@@ -8,7 +8,7 @@ output "endpoint" {
   description = "RDS instance endpoint (host:port)"
   value       = aws_db_instance.main.endpoint
   # Marked sensitive because it reveals the database hostname
-  sensitive   = true
+  sensitive = true
 }
 
 # Database name - used in connection strings

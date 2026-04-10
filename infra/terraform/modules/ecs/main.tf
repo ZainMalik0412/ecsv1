@@ -91,7 +91,7 @@ resource "aws_iam_role" "ecs_task_execution" {
 # This grants permissions for ECR image pulls and CloudWatch log writes
 resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   # Attach to our task execution role
-  role       = aws_iam_role.ecs_task_execution.name
+  role = aws_iam_role.ecs_task_execution.name
   # AWS-managed policy that covers standard ECS task execution needs
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
@@ -248,9 +248,9 @@ resource "aws_ecs_task_definition" "app" {
         logDriver = "awslogs"
         options = {
           # CloudWatch log group to write to
-          "awslogs-group"         = aws_cloudwatch_log_group.ecs.name
+          "awslogs-group" = aws_cloudwatch_log_group.ecs.name
           # AWS region for the log group
-          "awslogs-region"        = var.aws_region
+          "awslogs-region" = var.aws_region
           # Prefix for log stream names (helps identify which task wrote the log)
           "awslogs-stream-prefix" = "ecs"
         }
@@ -260,13 +260,13 @@ resource "aws_ecs_task_definition" "app" {
       # ECS uses this to determine if the container is healthy
       healthCheck = {
         # Command to run inside the container to check health
-        command     = ["CMD-SHELL", "curl -f http://localhost:${var.container_port}/health || exit 1"]
+        command = ["CMD-SHELL", "curl -f http://localhost:${var.container_port}/health || exit 1"]
         # Seconds between health check executions
-        interval    = 30
+        interval = 30
         # Seconds before the health check times out
-        timeout     = 5
+        timeout = 5
         # Number of consecutive failures before marking unhealthy
-        retries     = 3
+        retries = 3
         # Grace period in seconds before health checks start (allows app to boot)
         startPeriod = 60
       }
@@ -301,12 +301,12 @@ resource "aws_ecs_service" "app" {
 
   # Network configuration for awsvpc mode
   network_configuration {
-    # Place tasks in private subnets (not directly internet-accessible)
-    subnets = var.private_subnets
-    # Attach the ECS security group to control traffic
+    # Place tasks in public subnets (NAT Gateway removed for cost savings)
+    subnets = var.ecs_subnets
+    # Attach the ECS security group to control traffic (only allows ALB inbound)
     security_groups = [var.ecs_security_group_id]
-    # No public IP needed - tasks are accessed via the ALB through NAT
-    assign_public_ip = false
+    # Public IP required for tasks to reach ECR, CloudWatch, Secrets Manager
+    assign_public_ip = true
   }
 
   # Register tasks with the ALB target group for load balancing
