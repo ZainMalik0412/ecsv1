@@ -156,3 +156,4 @@ resource "aws_security_group" "rds" {
     Name = "${var.app_name}-rds-sg"
   }
 }
+
