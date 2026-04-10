@@ -184,6 +184,13 @@ jobs:
             --delete-automated-backups \
             2>/dev/null || echo "  RDS instance may not exist or already deleted"
           
+          # Wait briefly for RDS deletion to start, then clean up subnet group
+          echo "  Waiting 30s for RDS deletion to begin..."
+          sleep 30
+          aws rds delete-db-subnet-group \
+            --db-subnet-group-name attendancems-db-subnet-group \
+            2>/dev/null || echo "  DB subnet group may not exist or RDS still deleting"
+          
           echo "✅ Pre-destroy cleanup complete"
 
       - name: Terraform Destroy

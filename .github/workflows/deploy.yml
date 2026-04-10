@@ -263,6 +263,14 @@ jobs:
             --key '{"LockID":{"S":"attendancems-terraform-state/prod/terraform.tfstate"}}' 2>/dev/null || true
           echo "✅ Cleared any stale state locks"
 
+      - name: Clean up orphaned RDS resources
+        run: |
+          # DB subnet groups can persist after destroy if state was cleaned
+          aws rds delete-db-subnet-group \
+            --db-subnet-group-name attendancems-db-subnet-group 2>/dev/null \
+            && echo "✅ Cleaned up orphaned DB subnet group" \
+            || echo "ℹ️ No orphaned DB subnet group found"
+
       - name: Check for RDS snapshot to restore from
         id: check-snapshot
         run: |
