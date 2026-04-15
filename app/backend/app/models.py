@@ -1,4 +1,4 @@
-# SQLAlchemy ORM models.
+# SQLAlchemy ORM models..
 
 import enum
 from datetime import datetime
