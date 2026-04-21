@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { getUsers, bulkEnrollFaces, clearUserFaces } from '@/lib/api'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -14,7 +14,6 @@ import {
   ImagePlus,
   User as UserIcon,
   Loader2,
-  AlertCircle,
 } from 'lucide-react'
 
 interface User {
@@ -193,9 +192,6 @@ export default function BulkFaceEnrollmentPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Bulk Face Enrollment</h1>
-        <p className="text-muted-foreground">
-          Upload multiple images for a user and convert them into facial embeddings.
-        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
@@ -207,7 +203,6 @@ export default function BulkFaceEnrollmentPage() {
                 <UserIcon className="h-5 w-5" />
                 Target User
               </CardTitle>
-              <CardDescription>Pick the student or lecturer to enroll.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -269,30 +264,11 @@ export default function BulkFaceEnrollmentPage() {
                 />
                 <Label htmlFor="replace" className="cursor-pointer text-sm leading-snug">
                   <span className="font-medium">Replace existing encodings</span>
-                  <span className="block text-xs text-muted-foreground">
-                    Delete prior encodings for this user before enrolling the new batch.
-                  </span>
                 </Label>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-dashed">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                Image guidance
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1 text-sm text-muted-foreground">
-              <p>- Single person per image</p>
-              <p>- Face clearly visible, reasonable lighting</p>
-              <p>- Front-facing works best; slight angle variations are fine</p>
-              <p>- 3-10 images per user gives the best matching</p>
-              <p>- Max {MAX_IMAGES} images per batch, {MAX_FILE_SIZE_MB}MB each</p>
-              <p>- JPG, PNG, or WEBP</p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Right: Upload area + results */}
@@ -306,10 +282,6 @@ export default function BulkFaceEnrollmentPage() {
                   {images.length} / {MAX_IMAGES}
                 </Badge>
               </CardTitle>
-              <CardDescription>
-                Drop or pick face images. Each will be run through the face detector
-                and converted into a 128-dimensional embedding.
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <input
@@ -327,9 +299,6 @@ export default function BulkFaceEnrollmentPage() {
               >
                 <Upload className="h-10 w-10 text-muted-foreground mb-2" />
                 <p className="text-sm font-medium">Click to add images</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  You can select multiple files
-                </p>
               </label>
 
               {images.length > 0 && (
@@ -402,10 +371,6 @@ export default function BulkFaceEnrollmentPage() {
                     <Badge variant="destructive">{lastResult.failed} failed</Badge>
                   )}
                 </CardTitle>
-                <CardDescription>
-                  {lastResult.full_name} (@{lastResult.username}) now has {lastResult.total_encodings} encoding
-                  {lastResult.total_encodings === 1 ? '' : 's'}.
-                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-1">
                 {lastResult.results.map((r) => (
