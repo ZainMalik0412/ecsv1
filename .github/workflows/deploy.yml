@@ -131,7 +131,7 @@ jobs:
           echo "Cluster: $CLUSTER_EXISTS, Service: $SERVICE_EXISTS, ECR: $ECR_EXISTS, TF Changed: $TF_CHANGED"
           
           if [ "$CLUSTER_EXISTS" == "ACTIVE" ] && [ "$SERVICE_EXISTS" == "ACTIVE" ] && [ "$ECR_EXISTS" == "${{ env.ECR_REPOSITORY }}" ]; then
-            echo "✅ Infrastructure exists!"
+            echo "Infrastructure exists!"
             echo "infra_exists=true" >> $GITHUB_OUTPUT
             
             # Only run terraform if terraform files changed
@@ -139,11 +139,11 @@ jobs:
               echo "📝 Terraform files changed, will run terraform apply"
               echo "needs_terraform=true" >> $GITHUB_OUTPUT
             else
-              echo "⏭️ No terraform changes, skipping terraform apply"
+              echo "No terraform changes, skipping terraform apply"
               echo "needs_terraform=false" >> $GITHUB_OUTPUT
             fi
           else
-            echo "❌ Infrastructure missing, need full terraform apply"
+            echo "Infrastructure missing, need full terraform apply"
             echo "infra_exists=false" >> $GITHUB_OUTPUT
             echo "needs_terraform=true" >> $GITHUB_OUTPUT
           fi

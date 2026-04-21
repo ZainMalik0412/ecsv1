@@ -274,6 +274,21 @@ export const getStudentStats = async () => {
   return response.data
 }
 
+// Admin bulk face enrolment
+export const bulkEnrollFaces = async (data: {
+  user_id: number
+  images_base64: string[]
+  replace_existing: boolean
+}) => {
+  const response = await api.post('/face/admin/bulk-enroll', data)
+  return response.data
+}
+
+export const clearUserFaces = async (userId: number) => {
+  const response = await api.delete(`/face/admin/clear/${userId}`)
+  return response.data
+}
+
 // Live Session (FR6-FR8)
 export const getLiveSessionState = async (sessionId: number) => {
   const response = await api.get(`/sessions/${sessionId}/live-state`)

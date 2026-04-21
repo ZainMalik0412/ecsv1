@@ -1,11 +1,21 @@
 # Pydantic schemas for request/response validation.
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.models import AttendanceStatus, Role, SessionStatus
+
+
+def _to_naive_utc(v):
+    # Normalise incoming datetimes to timezone-naive UTC so they can be compared
+    # against datetime.utcnow() and stored consistently in the DB. The frontend
+    # sends ISO strings like '2026-04-21T23:05:55.061716Z' which Pydantic parses
+    # as tz-aware; the rest of the backend is tz-naive.
+    if isinstance(v, datetime) and v.tzinfo is not None:
+        return v.astimezone(timezone.utc).replace(tzinfo=None)
+    return v
 
 
 # Auth
@@ -107,6 +117,11 @@ class SessionBase(BaseModel):
     scheduled_end: datetime
     late_threshold_minutes: int = 15
 
+    @field_validator("scheduled_start", "scheduled_end")
+    @classmethod
+    def _strip_tz(cls, v):
+        return _to_naive_utc(v)
+
 
 class SessionCreate(SessionBase):
     module_id: int
@@ -117,6 +132,11 @@ class SessionUpdate(BaseModel):
     scheduled_start: Optional[datetime] = None
     scheduled_end: Optional[datetime] = None
     late_threshold_minutes: Optional[int] = None
+
+    @field_validator("scheduled_start", "scheduled_end")
+    @classmethod
+    def _strip_tz(cls, v):
+        return _to_naive_utc(v)
 
 
 class SessionOut(SessionBase):
@@ -188,6 +208,30 @@ class FaceVerifyResponse(BaseModel):
     confidence: Optional[float] = None
     attendance_id: Optional[int] = None
     message: str
+
+
+# Bulk face enrolment (admin only)
+class BulkFaceEnrollRequest(BaseModel):
+    user_id: int
+    images_base64: List[str] = Field(..., min_length=1, max_length=50)
+    replace_existing: bool = False
+
+
+class BulkFaceEnrollImageResult(BaseModel):
+    index: int
+    success: bool
+    message: str
+    filename: Optional[str] = None
+
+
+class BulkFaceEnrollResponse(BaseModel):
+    user_id: int
+    username: str
+    full_name: str
+    enrolled: int
+    failed: int
+    total_encodings: int
+    results: List[BulkFaceEnrollImageResult]
 
 
 # Dashboard / Reports

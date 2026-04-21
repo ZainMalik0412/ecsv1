@@ -4,9 +4,17 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, HTTPException
 
-from app.deps import CurrentUser, DBSession
-from app.models import Attendance, AttendanceStatus, FaceEncoding, Role, Session, SessionStatus
-from app.schemas import FaceRegisterRequest, FaceRegisterResponse, FaceVerifyRequest, FaceVerifyResponse
+from app.deps import CurrentUser, DBSession, RequireAdmin
+from app.models import Attendance, AttendanceStatus, FaceEncoding, Role, Session, SessionStatus, User
+from app.schemas import (
+    BulkFaceEnrollImageResult,
+    BulkFaceEnrollRequest,
+    BulkFaceEnrollResponse,
+    FaceRegisterRequest,
+    FaceRegisterResponse,
+    FaceVerifyRequest,
+    FaceVerifyResponse,
+)
 from app.services.face_recognition import (
     bytes_to_encoding,
     compare_faces,
@@ -185,4 +193,95 @@ def verify_face_and_mark_attendance(
         confidence=confidence,
         attendance_id=attendance_id,
         message=f"Attendance marked as {status.value}",
+    )
+
+
+# Admin-only bulk face enrolment
+@router.post("/admin/bulk-enroll", response_model=BulkFaceEnrollResponse)
+def admin_bulk_enroll_faces(
+    payload: BulkFaceEnrollRequest,
+    db: DBSession,
+    _: RequireAdmin,
+):
+    # Bulk-enroll face encodings for a given user (admin only).
+    #
+    # For each submitted image the endpoint runs the existing single-face
+    # extraction pipeline. Successful embeddings are stored against the target
+    # user. If `replace_existing` is true, all prior encodings for that user are
+    # deleted before the new ones are saved. Results are reported per image so
+    # the caller can see which images succeeded and which failed.
+    user = db.query(User).filter(User.id == payload.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if payload.replace_existing:
+        db.query(FaceEncoding).filter(FaceEncoding.user_id == user.id).delete()
+        db.flush()
+
+    results = []
+    enrolled = 0
+    failed = 0
+
+    for idx, image_b64 in enumerate(payload.images_base64):
+        try:
+            encoding, message = extract_and_encode_face(image_b64)
+        except Exception as e:
+            failed += 1
+            results.append(BulkFaceEnrollImageResult(
+                index=idx,
+                success=False,
+                message=f"Processing error: {str(e)}",
+            ))
+            continue
+
+        if encoding is None:
+            failed += 1
+            results.append(BulkFaceEnrollImageResult(
+                index=idx,
+                success=False,
+                message=message,
+            ))
+            continue
+
+        face_encoding = FaceEncoding(
+            user_id=user.id,
+            encoding=encoding_to_bytes(encoding),
+        )
+        db.add(face_encoding)
+        enrolled += 1
+        results.append(BulkFaceEnrollImageResult(
+            index=idx,
+            success=True,
+            message="Enrolled",
+        ))
+
+    db.commit()
+
+    total = db.query(FaceEncoding).filter(FaceEncoding.user_id == user.id).count()
+
+    return BulkFaceEnrollResponse(
+        user_id=user.id,
+        username=user.username,
+        full_name=user.full_name,
+        enrolled=enrolled,
+        failed=failed,
+        total_encodings=total,
+        results=results,
+    )
+
+
+@router.delete("/admin/clear/{user_id}", response_model=FaceRegisterResponse)
+def admin_clear_user_faces(user_id: int, db: DBSession, _: RequireAdmin):
+    # Clear all face encodings for a specific user (admin only).
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    deleted = db.query(FaceEncoding).filter(FaceEncoding.user_id == user_id).delete()
+    db.commit()
+
+    return FaceRegisterResponse(
+        success=True,
+        message=f"Cleared {deleted} face registration(s) for {user.username}",
+        encodings_count=0,
     )

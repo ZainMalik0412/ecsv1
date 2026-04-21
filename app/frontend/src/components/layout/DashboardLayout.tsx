@@ -18,6 +18,7 @@ import {
   BarChart3,
   CalendarDays,
   AlertCircle,
+  UserPlus,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
   { label: 'Attendance', path: '/attendance', icon: <ClipboardList className="h-5 w-5" />, roles: ['lecturer', 'admin'] },
   { label: 'My Stats', path: '/my-stats', icon: <BarChart3 className="h-5 w-5" />, roles: ['student'] },
   { label: 'Users', path: '/users', icon: <Users className="h-5 w-5" />, roles: ['admin'] },
+  { label: 'Bulk Face Enrollment', path: '/bulk-face-enrollment', icon: <UserPlus className="h-5 w-5" />, roles: ['admin'] },
   { label: 'Register Face', path: '/face-registration', icon: <Camera className="h-5 w-5" />, roles: ['student'] },
 ]
 

@@ -14,6 +14,7 @@ import MarkAttendancePage from '@/pages/MarkAttendancePage'
 import LiveSessionPage from '@/pages/LiveSessionPage'
 import CalendarPage from '@/pages/CalendarPage'
 import StudentStatsPage from '@/pages/StudentStatsPage'
+import BulkFaceEnrollmentPage from '@/pages/BulkFaceEnrollmentPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore()
@@ -47,6 +48,7 @@ function App() {
           <Route path="live-session/:sessionId" element={<LiveSessionPage />} />
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="my-stats" element={<StudentStatsPage />} />
+          <Route path="bulk-face-enrollment" element={<BulkFaceEnrollmentPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
